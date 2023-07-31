@@ -130,7 +130,7 @@ domain_manager_thread.start()
 
 # Helper function to check if a domain exists in node pool or recycle bin
 def is_domain_exists(domain):
-    for node in node_pool + recycle_bin:
+    for node in node_pool:
         if node['domain'] == domain:
             return True
     return False
