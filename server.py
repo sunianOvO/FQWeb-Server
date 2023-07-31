@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 import re
@@ -24,6 +25,13 @@ daily_requests = 0
 shared_nodes = 0
 active_nodes = 0
 start_time = time.time()
+
+
+# 日志打印
+def log(msg):
+    utc_time = datetime.datetime.utcnow()
+    china_time = utc_time + datetime.timedelta(hours=8)
+    print(f"[{china_time.strftime('%Y.%m.%d %H:%M:%S')}] {msg}")
 
 
 # 保存统计数据到文件的函数
@@ -113,39 +121,42 @@ def is_valid_domain_name(domain):
 # Helper function to manage domain status in the node pool and recycle bin
 def manage_domains():
     while True:
-        # Move domains from node pool to recycle bin if they are not accessible
-        for domain in node_pool:
-            if not is_domain_accessible(domain):
-                recycle_bin.append(domain)
-                node_pool.remove(domain)
+        try:
+            # Move domains from node pool to recycle bin if they are not accessible
+            for domain in node_pool:
+                if not is_domain_accessible(domain):
+                    recycle_bin.append(domain)
+                    node_pool.remove(domain)
 
-        # Move domains from recycle bin back to node pool if they become accessible again
-        for domain in recycle_bin:
-            if is_domain_accessible(domain):
-                node_pool.append(domain)
-                recycle_bin.remove(domain)
+            # Move domains from recycle bin back to node pool if they become accessible again
+            for domain in recycle_bin:
+                if is_domain_accessible(domain):
+                    node_pool.append(domain)
+                    recycle_bin.remove(domain)
 
-        # Remove domains from recycle bin if they are inaccessible for more than an hour
-        for domain in recycle_bin:
-            if time.time() - domain['timestamp'] >= 3600:
-                recycle_bin.remove(domain)
+            # Remove domains from recycle bin if they are inaccessible for more than an hour
+            for domain in recycle_bin:
+                if time.time() - domain['timestamp'] >= 3600:
+                    recycle_bin.remove(domain)
 
-        # Update statistics
-        global shared_nodes, active_nodes
-        shared_nodes = len(node_pool) + len(recycle_bin)
-        active_nodes = len(node_pool)
+            # Update statistics
+            global shared_nodes, active_nodes
+            shared_nodes = len(node_pool) + len(recycle_bin)
+            active_nodes = len(node_pool)
 
-        # Save statistics to file
-        save_statistics()
-        # Save data to file
-        save_data_to_file()
+            # Save statistics to file
+            save_statistics()
+            # Save data to file
+            save_data_to_file()
 
-        # Wait for 10 seconds before rechecking domains
-        time.sleep(10)
+            # Wait for 10 seconds before rechecking domains
+            time.sleep(10)
+        except Exception as e:
+            log(e)
 
 
 # Start the domain management thread
-domain_manager_thread = threading.Thread(target=manage_domains)
+domain_manager_thread = threading.Thread(target=manage_domains, name="Check domain", daemon=True)
 domain_manager_thread.start()
 
 
