@@ -1,3 +1,4 @@
+import os
 import random
 import threading
 import time
@@ -7,6 +8,10 @@ import requests
 from flask import Flask, request, redirect
 
 app = Flask(__name__)
+
+# 数据文件保存目录
+data_dir = "data"
+os.makedirs(data_dir, exist_ok=True)
 
 # Node pool and recycle bin to store domain names
 node_pool = []
@@ -28,13 +33,13 @@ def save_statistics():
         "active_nodes": active_nodes,
         "start_time": start_time
     }
-    with open("statistics.json", "w") as file:
+    with open(os.path.join(data_dir, "statistics.json"), "w") as file:
         json.dump(stats, file)
 
 # 从文件加载统计数据的函数
 def load_statistics():
     try:
-        with open("statistics.json", "r") as file:
+        with open(os.path.join(data_dir, "statistics.json"), "r") as file:
             stats = json.load(file)
             global total_requests, daily_requests, shared_nodes, active_nodes, start_time
             total_requests = stats.get("total_requests", 0)
@@ -48,14 +53,14 @@ def load_statistics():
 # Load node pool and recycle bin from files (if available)
 def load_data_from_file():
     try:
-        with open("node_pool.json", "r") as node_pool_file:
+        with open(os.path.join(data_dir, "node_pool.json"), "r") as node_pool_file:
             global node_pool
             node_pool = json.load(node_pool_file)
     except FileNotFoundError:
         pass
 
     try:
-        with open("recycle_bin.json", "r") as recycle_bin_file:
+        with open(os.path.join(data_dir, "recycle_bin.json"), "r") as recycle_bin_file:
             global recycle_bin
             recycle_bin = json.load(recycle_bin_file)
     except FileNotFoundError:
@@ -63,10 +68,10 @@ def load_data_from_file():
 
 # Save node pool and recycle bin to files
 def save_data_to_file():
-    with open("node_pool.json", "w") as node_pool_file:
+    with open(os.path.join(data_dir, "node_pool.json"), "w") as node_pool_file:
         json.dump(node_pool, node_pool_file)
 
-    with open("recycle_bin.json", "w") as recycle_bin_file:
+    with open(os.path.join(data_dir, "recycle_bin.json"), "w") as recycle_bin_file:
         json.dump(recycle_bin, recycle_bin_file)
 
 # 在服务器启动时加载统计数据
