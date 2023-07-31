@@ -6,16 +6,19 @@ name: fqweb-server-Build
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches:
-      - main
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '.idea/**'
+      - '!.github/workflows/**'
   pull_request:
-    branches:
-      - main
-  paths-ignore:
-    - '**.md'
-    - '.github/**'
-    - '.idea/**'
-    - '!.github/workflows/**'
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '.idea/**'
+      - '!.github/workflows/**'
   # schedule:
   #   - cron: "0 0 * * */3"
 
