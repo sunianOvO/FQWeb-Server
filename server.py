@@ -80,11 +80,14 @@ load_data_from_file()
 
 # Helper function to check if a domain is accessible (e.g., not 404)
 def is_domain_accessible(domain):
-    # 替换此函数以添加自定义的域名可访问性检查逻辑
     try:
         url = f'http://{domain["domain"]}/content'
         response = requests.get(url)
-        return response.status_code == 200
+        if response.status_code == 200:
+            domain['timestamp'] = time.time()
+            return True
+        else:
+            return False
     except requests.exceptions.RequestException:
         return False
 
