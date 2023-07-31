@@ -5,5 +5,7 @@ services:
     container_name: fqweb-server  # 替换为你的容器名称
     ports:
       - "5000:5000"
+    environment:
+      - TZ=Asia/Shanghai
     volumes:
-      - ./data:/app/data  # 映射本地的./data目录到容器内的/app/data目录
+      - /data:/app/data  # 映射本地的/data目录到容器内的/app/data目录

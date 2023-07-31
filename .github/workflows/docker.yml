@@ -9,6 +9,11 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  paths-ignore:
+    - '**.md'
+    - '.github/**'
+    - '.idea/**'
+    - '!.github/workflows/**'
   # schedule:
   #   - cron: "0 0 * * */3"
 
