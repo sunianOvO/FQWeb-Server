@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import threading
 import time
 import json
@@ -24,6 +25,7 @@ shared_nodes = 0
 active_nodes = 0
 start_time = time.time()
 
+
 # 保存统计数据到文件的函数
 def save_statistics():
     stats = {
@@ -35,6 +37,7 @@ def save_statistics():
     }
     with open(os.path.join(data_dir, "statistics.json"), "w") as file:
         json.dump(stats, file)
+
 
 # 从文件加载统计数据的函数
 def load_statistics():
@@ -49,6 +52,7 @@ def load_statistics():
             start_time = stats.get("start_time", time.time())
     except FileNotFoundError:
         pass
+
 
 # Load node pool and recycle bin from files (if available)
 def load_data_from_file():
@@ -66,6 +70,7 @@ def load_data_from_file():
     except FileNotFoundError:
         pass
 
+
 # Save node pool and recycle bin to files
 def save_data_to_file():
     with open(os.path.join(data_dir, "node_pool.json"), "w") as node_pool_file:
@@ -74,9 +79,11 @@ def save_data_to_file():
     with open(os.path.join(data_dir, "recycle_bin.json"), "w") as recycle_bin_file:
         json.dump(recycle_bin, recycle_bin_file)
 
+
 # 在服务器启动时加载统计数据
 load_statistics()
 load_data_from_file()
+
 
 # Helper function to check if a domain is accessible (e.g., not 404)
 def is_domain_accessible(domain):
@@ -88,8 +95,20 @@ def is_domain_accessible(domain):
             return True
         else:
             return False
-    except requests.exceptions.RequestException:
+    except Exception:
         return False
+
+
+def is_valid_domain_name(domain):
+    # 定义域名的正则表达式模式
+    domain_pattern = r'^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
+
+    # 使用re.match函数进行匹配
+    if re.match(domain_pattern, domain):
+        return True
+    else:
+        return False
+
 
 # Helper function to manage domain status in the node pool and recycle bin
 def manage_domains():
@@ -124,9 +143,11 @@ def manage_domains():
         # Wait for 10 seconds before rechecking domains
         time.sleep(10)
 
+
 # Start the domain management thread
 domain_manager_thread = threading.Thread(target=manage_domains)
 domain_manager_thread.start()
+
 
 # Helper function to check if a domain exists in node pool or recycle bin
 def is_domain_exists(domain):
@@ -134,6 +155,7 @@ def is_domain_exists(domain):
         if node['domain'] == domain:
             return True
     return False
+
 
 # 用户上传域名到节点池的接口
 @app.route('/upload', methods=['GET'])
@@ -145,6 +167,9 @@ def upload_domain():
     domain = request.args.get('domain')
     if not domain:
         return '未提供域名', 400
+
+    # if not is_valid_domain_name(domain):
+    #     return '不合法的域名', 400
 
     if is_domain_exists(domain):
         return '该域名已存在于节点池', 400
@@ -158,6 +183,7 @@ def upload_domain():
     node_pool.append({'domain': domain, 'timestamp': time.time()})
     return '域名已成功上传', 200
 
+
 # 用户随机获取节点池中的域名（负载均衡）
 @app.route('/random', methods=['GET'])
 def get_random_domain():
@@ -170,6 +196,7 @@ def get_random_domain():
 
     domain = random.choice(node_pool)
     return domain['domain'], 200
+
 
 # 重定向至随机节点池中的域名（负载均衡），重定向需要保留URL和参数进行重定向
 @app.route('/<path:any_url>', methods=['GET'])
@@ -185,6 +212,7 @@ def redirect_to_random_domain(any_url):
     redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
     return redirect(redirect_url, 302)
 
+
 # 获取所有活跃节点的域名，换行输出
 @app.route('/reading', methods=['GET'])
 def get_active_nodes():
@@ -197,6 +225,7 @@ def get_active_nodes():
 
     active_node_domains = '\n'.join(domain['domain'] for domain in node_pool)
     return active_node_domains, 200
+
 
 # 获取统计数据的接口
 @app.route('/stats', methods=['GET'])
@@ -211,6 +240,7 @@ def get_statistics():
         f"运行时间（小时）：{uptime_hours}"
     )
     return stats_text, 200
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
