@@ -168,8 +168,8 @@ def upload_domain():
     if not domain:
         return '未提供域名', 400
 
-    # if not is_valid_domain_name(domain):
-    #     return '不合法的域名', 400
+    if not is_valid_domain_name(domain):
+        return '不合法的域名', 400
 
     if is_domain_exists(domain):
         return '该域名已存在于节点池', 400
