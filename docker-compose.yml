@@ -1,8 +1,8 @@
 version: '3'
 services:
   web:
-    image: fengyuecanzhu/fqweb-server  # 替换为你的服务器镜像名称
-    container_name: fqweb-server  # 替换为你的容器名称
+    image: fengyuecanzhu/fqweb-server
+    container_name: fqweb-server
     ports:
       - "5000:5000"
     environment:

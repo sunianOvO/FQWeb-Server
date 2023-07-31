@@ -169,7 +169,6 @@ def get_random_domain():
     return domain['domain'], 200
 
 # 重定向至随机节点池中的域名（负载均衡），重定向需要保留URL和参数进行重定向
-# 重定向至随机节点池中的域名（负载均衡），重定向需要保留URL和参数进行重定向
 @app.route('/<path:any_url>', methods=['GET'])
 def redirect_to_random_domain(any_url):
     global total_requests, daily_requests
