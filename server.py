@@ -247,7 +247,7 @@ def get_active_nodes():
         return '没有可用的活跃节点', 404
 
     active_node_domains = '\n'.join(domain['domain'] for domain in node_pool)
-    return active_node_domains, 200
+    return active_node_domains, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
 # 获取统计数据的接口
@@ -262,7 +262,7 @@ def get_statistics():
         f"活跃节点数：{active_nodes}\n"
         f"运行时间（小时）：{uptime_hours}"
     )
-    return stats_text, 200
+    return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
 if __name__ == '__main__':
