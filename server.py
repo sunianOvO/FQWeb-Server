@@ -7,6 +7,7 @@ import time
 import json
 
 import requests
+import schedule
 from flask import Flask, request, redirect
 
 app = Flask(__name__)
@@ -93,6 +94,16 @@ load_statistics()
 load_data_from_file()
 
 
+# 每天零点清零日请求次数
+def reset_daily_requests():
+    global daily_requests
+    daily_requests = 0
+
+
+# 在每天零点调用 reset_daily_requests 函数
+schedule.every().day.at("00:00").do(reset_daily_requests)
+
+
 # Helper function to check if a domain is accessible (e.g., not 404)
 def is_domain_accessible(domain):
     try:
@@ -148,7 +159,8 @@ def manage_domains():
             save_statistics()
             # Save data to file
             save_data_to_file()
-
+            # 启动定时任务
+            schedule.run_pending()
             # Wait for 10 seconds before rechecking domains
             time.sleep(10)
         except Exception as e:
