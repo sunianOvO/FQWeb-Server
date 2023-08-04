@@ -222,8 +222,19 @@ def is_domain_exists(domain):
     return False
 
 
+def is_valid_token(token):
+    pattern = r'^[A-Za-z0-9]+$'
+    # 使用re.match函数进行匹配
+    if re.match(pattern, token):
+        return True
+    else:
+        return False
+
+
 # 添加或更新token
 def add_or_update_token(token, add_time=10):
+    if not is_valid_token(token):
+        return
     log(f'添加或更新token：{token}')
     for token_obj in tokens:
         if token_obj['token'] == token:
@@ -375,10 +386,12 @@ def get_active_nodes():
     active_node_domains = '\n'.join(domain['domain'] for domain in node_pool)
     return active_node_domains, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
+
 # 获取可用节点数
 @app.route('/available', methods=['GET'])
 def get_active_nodes_num():
     return active_nodes, 200
+
 
 # 获取统计数据的接口
 @app.route('/stats', methods=['GET'])
