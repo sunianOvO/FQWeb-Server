@@ -320,8 +320,10 @@ def redirect_to_random_domain(any_url):
         return redirect(redirect_url, 302)
 
     # 寻找非满载的节点进行重定向，如果节点池中的节点均满载，则持续等待有非满载的节点进行重定向
+    nodes = node_pool.copy()
     while True:
-        for domain in node_pool:
+        random.shuffle(nodes)
+        for domain in nodes:
             if 'load' not in domain:
                 domain['load'] = 0
             if domain['load'] < max_load_per_node:
@@ -330,19 +332,6 @@ def redirect_to_random_domain(any_url):
                 return redirect(redirect_url, 302)
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
-
-
-def increase_load(domain):
-    global delay_time
-    domain['load'] += 1
-    # delay_time秒后将载荷减1
-    threading.Timer(delay_time, lambda: reduce_load(domain)).start()
-    log(f'节点载荷加一：{domain}')
-
-
-def reduce_load(domain):
-    domain['load'] -= 1
-    log(f'节点载荷减一：{domain}')
 
 
 # 用户随机获取节点池中的域名（负载均衡）
@@ -362,8 +351,10 @@ def get_random_domain():
         return domain['domain'], 200
 
     # 寻找非满载的节点进行选取，如果节点池中的节点均满载，则持续等待有非满载的节点进行选取
+    nodes = node_pool.copy()
     while True:
-        for domain in node_pool:
+        random.shuffle(nodes)
+        for domain in nodes:
             if 'load' not in domain:
                 domain['load'] = 0
             if domain['load'] < max_load_per_node:
@@ -371,6 +362,19 @@ def get_random_domain():
                 return domain['domain'], 200
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
+
+
+def increase_load(domain):
+    global delay_time
+    domain['load'] += 1
+    # delay_time秒后将载荷减1
+    threading.Timer(delay_time, lambda: reduce_load(domain)).start()
+    log(f'节点载荷加一：{domain}')
+
+
+def reduce_load(domain):
+    domain['load'] -= 1
+    log(f'节点载荷减一：{domain}')
 
 
 # 获取所有活跃节点的域名，换行输出
