@@ -2,6 +2,7 @@ import datetime
 import os
 import random
 import re
+import sys
 import threading
 import time
 import json
@@ -12,6 +13,9 @@ from flask import Flask, request, redirect
 
 app = Flask(__name__)
 
+# 管理员TOKEN
+FQWEB_TOKEN = os.environ.get("FQWEB_TOKEN")
+
 # 数据文件保存目录
 data_dir = "data"
 os.makedirs(data_dir, exist_ok=True)
@@ -19,6 +23,8 @@ os.makedirs(data_dir, exist_ok=True)
 # Node pool and recycle bin to store domain names
 node_pool = []
 recycle_bin = []
+tokens = []
+request_pool = []
 
 # 统计数据变量
 total_requests = 0
@@ -26,6 +32,9 @@ daily_requests = 0
 shared_nodes = 0
 active_nodes = 0
 start_time = time.time()
+
+# 节点的最大载荷数
+max_load_per_node = 8
 
 
 # 日志打印
@@ -46,6 +55,7 @@ def save_statistics():
     }
     with open(os.path.join(data_dir, "statistics.json"), "w") as file:
         json.dump(stats, file)
+        # log(f'保存统计数据')
 
 
 # 从文件加载统计数据的函数
@@ -59,6 +69,7 @@ def load_statistics():
             shared_nodes = stats.get("shared_nodes", 0)
             active_nodes = stats.get("active_nodes", 0)
             start_time = stats.get("start_time", time.time())
+            log(f'加载统计数据')
     except FileNotFoundError:
         pass
 
@@ -69,6 +80,7 @@ def load_data_from_file():
         with open(os.path.join(data_dir, "node_pool.json"), "r") as node_pool_file:
             global node_pool
             node_pool = json.load(node_pool_file)
+            log(f'加载节点池数据')
     except FileNotFoundError:
         pass
 
@@ -76,6 +88,15 @@ def load_data_from_file():
         with open(os.path.join(data_dir, "recycle_bin.json"), "r") as recycle_bin_file:
             global recycle_bin
             recycle_bin = json.load(recycle_bin_file)
+            log(f'加载回收站数据')
+    except FileNotFoundError:
+        pass
+
+    try:
+        with open(os.path.join(data_dir, "tokens.json"), "r") as tokens_file:
+            global tokens
+            tokens = json.load(tokens_file)
+            log(f'加载tokens数据')
     except FileNotFoundError:
         pass
 
@@ -84,9 +105,15 @@ def load_data_from_file():
 def save_data_to_file():
     with open(os.path.join(data_dir, "node_pool.json"), "w") as node_pool_file:
         json.dump(node_pool, node_pool_file)
+        # log(f'保存节点池数据')
 
     with open(os.path.join(data_dir, "recycle_bin.json"), "w") as recycle_bin_file:
         json.dump(recycle_bin, recycle_bin_file)
+        # log(f'保存回收站数据')
+
+    with open(os.path.join(data_dir, "tokens.json"), "w") as tokens_file:
+        json.dump(tokens, tokens_file)
+        # log(f'保存tokens数据')
 
 
 # 在服务器启动时加载统计数据
@@ -98,6 +125,7 @@ load_data_from_file()
 def reset_daily_requests():
     global daily_requests
     daily_requests = 0
+    log(f'日请求清零')
 
 
 # 在每天零点调用 reset_daily_requests 函数
@@ -107,6 +135,7 @@ schedule.every().day.at("00:00").do(reset_daily_requests)
 # Helper function to check if a domain is accessible (e.g., not 404)
 def is_domain_accessible(domain):
     try:
+        log(f'检测节点是否有效：{domain["domain"]}')
         url = f'http://{domain["domain"]}/content'
         response = requests.get(url)
         if response.status_code == 200:
@@ -138,17 +167,27 @@ def manage_domains():
                 if not is_domain_accessible(domain):
                     recycle_bin.append(domain)
                     node_pool.remove(domain)
+                else:
+                    if domain['token']:
+                        add_or_update_token(domain['token'], 10 * 5)
 
             # Move domains from recycle bin back to node pool if they become accessible again
             for domain in recycle_bin:
                 if is_domain_accessible(domain):
                     node_pool.append(domain)
                     recycle_bin.remove(domain)
+                    if domain['token']:
+                        add_or_update_token(domain['token'], 10 * 5)
 
             # Remove domains from recycle bin if they are inaccessible for more than an hour
             for domain in recycle_bin:
                 if time.time() - domain['timestamp'] >= 3600:
                     recycle_bin.remove(domain)
+
+            # Remove tokens if they are invalid
+            for token in tokens:
+                if token['expire_time'] < time.time():
+                    tokens.remove(token)
 
             # Update statistics
             global shared_nodes, active_nodes
@@ -180,6 +219,45 @@ def is_domain_exists(domain):
     return False
 
 
+# 添加或更新token
+def add_or_update_token(token, add_time=10):
+    log(f'添加或更新token：{token}')
+    for token_obj in tokens:
+        if token_obj['token'] == token:
+            if token_obj['expire_time'] < time.time():
+                token_obj['expire_time'] = time.time() + add_time
+            else:
+                token_obj['expire_time'] = token_obj['expire_time'] + add_time
+            return
+    tokens.append({'token': token, 'expire_time': time.time() + add_time})
+
+
+# 检测token是否有效
+@app.route('/valid', methods=['GET'])
+def token_valid():
+    global total_requests, daily_requests
+    total_requests += 1
+    daily_requests += 1
+
+    token = request.args.get('token')
+    return is_token_valid(token)
+
+
+# 判断token是否有效
+def is_token_valid(token):
+    log(f'判断token是否有效：{token}')
+    if not token:
+        return '未提供token', 400
+    for token_obj in tokens:
+        if token_obj['token'] == token:
+            if token_obj['expire_time'] < time.time():
+                return 'token已失效', 400
+            else:
+                return f'有效的token，过期时间：' \
+                       f'{time.strftime("%Y.%m.%d %H:%M:%S", time.localtime(token_obj["expire_time"]))}', 200
+    return 'token不存在', 400
+
+
 # 用户上传域名到节点池的接口
 @app.route('/upload', methods=['GET'])
 def upload_domain():
@@ -188,6 +266,7 @@ def upload_domain():
     daily_requests += 1
 
     domain = request.args.get('domain')
+    token = request.args.get('token')
     if not domain:
         return '未提供域名', 400
 
@@ -202,53 +281,85 @@ def upload_domain():
         if node['domain'] == domain:
             recycle_bin.remove(node)
             break
+    if token:
+        add_or_update_token(token)
 
-    node_pool.append({'domain': domain, 'timestamp': time.time()})
+    node_pool.append({'domain': domain, 'token': token, 'timestamp': time.time()})
     return '域名已成功上传', 200
-
-
-# 用户随机获取节点池中的域名（负载均衡）
-@app.route('/random', methods=['GET'])
-def get_random_domain():
-    global total_requests, daily_requests
-    total_requests += 1
-    daily_requests += 1
-
-    if not node_pool:
-        return '没有可用的域名', 404
-
-    domain = random.choice(node_pool)
-    return domain['domain'], 200
 
 
 # 重定向至随机节点池中的域名（负载均衡），重定向需要保留URL和参数进行重定向
 @app.route('/<path:any_url>', methods=['GET'])
 def redirect_to_random_domain(any_url):
-    global total_requests, daily_requests
+    global total_requests, daily_requests, max_load_per_node
     total_requests += 1
     daily_requests += 1
 
+    token = request.headers.get('token')
     if not node_pool:
         return '没有可用的域名', 404
 
-    domain = random.choice(node_pool)
-    redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
-    return redirect(redirect_url, 302)
+    if is_token_valid(token)[1] == 200:
+        domain = random.choice(node_pool)
+        redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
+        return redirect(redirect_url, 302)
+
+    # 寻找非满载的节点进行重定向，如果节点池中的节点均满载，则持续等待有非满载的节点进行重定向
+    while True:
+        for domain in node_pool:
+            if 'load' not in domain:
+                domain['load'] = 0
+            if domain['load'] < max_load_per_node:
+                domain['load'] += 1
+                redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
+                # 2秒后将载荷减1
+                threading.Timer(2, lambda: reduce_load(domain)).start()
+                log(f'节点载荷加一：{domain}')
+                return redirect(redirect_url, 302)
+        # 若所有节点都满载，则等待0.1秒后重新检查
+        time.sleep(0.1)
+
+
+def reduce_load(domain):
+    domain['load'] -= 1
+    log(f'节点载荷减一：{domain}')
+
+
+# 用户随机获取节点池中的域名（负载均衡）
+# @app.route('/random', methods=['GET'])
+# def get_random_domain():
+#     global total_requests, daily_requests
+#     total_requests += 1
+#     daily_requests += 1
+#
+#     if not node_pool:
+#         return '没有可用的域名', 404
+#
+#     domain = random.choice(node_pool)
+#     return domain['domain'], 200
 
 
 # 获取所有活跃节点的域名，换行输出
 @app.route('/reading', methods=['GET'])
 def get_active_nodes():
-    global total_requests, daily_requests, active_nodes
+    global total_requests, daily_requests, active_nodes, FQWEB_TOKEN
     total_requests += 1
     daily_requests += 1
-
+    token = request.args.get("token")
+    if not FQWEB_TOKEN:
+        return '未设置TOKEN', 404
+    if not token or token != FQWEB_TOKEN:
+        return '无效的token', 404
     if not node_pool:
         return '没有可用的活跃节点', 404
 
     active_node_domains = '\n'.join(domain['domain'] for domain in node_pool)
     return active_node_domains, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
+# 获取可用节点数
+@app.route('/available', methods=['GET'])
+def get_active_nodes_num():
+    return active_nodes, 200
 
 # 获取统计数据的接口
 @app.route('/stats', methods=['GET'])
@@ -266,4 +377,6 @@ def get_statistics():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        FQWEB_TOKEN = sys.argv[1]
     app.run(host='0.0.0.0', port=5000)
