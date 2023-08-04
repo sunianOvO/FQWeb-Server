@@ -387,7 +387,7 @@ def get_active_nodes():
     if not node_pool:
         return '没有可用的节点', 404
 
-    active_node_domains = '\n'.join(f'{domain["domain"]}: {domain["load"]}' for domain in node_pool)
+    active_node_domains = '\n'.join(f'{domain["domain"]}: {domain.get("load", 0)}' for domain in node_pool)
     return active_node_domains, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
