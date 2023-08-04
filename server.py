@@ -24,7 +24,6 @@ os.makedirs(data_dir, exist_ok=True)
 node_pool = []
 recycle_bin = []
 tokens = []
-request_pool = []
 
 # 统计数据变量
 total_requests = 0
@@ -171,7 +170,7 @@ def manage_domains():
                     recycle_bin.append(domain)
                     node_pool.remove(domain)
                 else:
-                    if domain['token']:
+                    if 'token' in domain:
                         add_or_update_token(domain['token'], 10 * 5)
 
             # Move domains from recycle bin back to node pool if they become accessible again
@@ -179,7 +178,7 @@ def manage_domains():
                 if is_domain_accessible(domain):
                     node_pool.append(domain)
                     recycle_bin.remove(domain)
-                    if domain['token']:
+                    if 'token' in domain:
                         add_or_update_token(domain['token'], 10 * 5)
 
             # Remove domains from recycle bin if they are inaccessible for more than an hour
@@ -295,10 +294,11 @@ def upload_domain():
         if node['domain'] == domain:
             recycle_bin.remove(node)
             break
-    if token:
+    if token and is_valid_token(token):
         add_or_update_token(token)
-
-    node_pool.append({'domain': domain, 'token': token, 'timestamp': time.time()})
+        node_pool.append({'domain': domain, 'token': token, 'timestamp': time.time()})
+    else:
+        node_pool.append({'domain': domain, 'timestamp': time.time()})
     return '域名已成功上传', 200
 
 
