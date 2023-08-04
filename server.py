@@ -315,8 +315,8 @@ def redirect_to_random_domain(any_url):
             if domain['load'] < max_load_per_node:
                 domain['load'] += 1
                 redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
-                # 2秒后将载荷减1
-                threading.Timer(2, lambda: reduce_load(domain)).start()
+                # 1秒后将载荷减1
+                threading.Timer(1, lambda: reduce_load(domain)).start()
                 log(f'节点载荷加一：{domain}')
                 return redirect(redirect_url, 302)
         # 若所有节点都满载，则等待0.1秒后重新检查
@@ -350,8 +350,8 @@ def get_random_domain():
                 domain['load'] = 0
             if domain['load'] < max_load_per_node:
                 domain['load'] += 1
-                # 2秒后将载荷减1
-                threading.Timer(2, lambda: reduce_load(domain)).start()
+                # 1秒后将载荷减1
+                threading.Timer(1, lambda: reduce_load(domain)).start()
                 log(f'节点载荷加一：{domain}')
                 return domain['domain'], 200
         # 若所有节点都满载，则等待0.1秒后重新检查
