@@ -10,7 +10,7 @@ cd FQWeb-Server
 # 安装python依赖
 pip install -r requirements.txt
 # 启动
-python server.py
+python server.py fqweb_token
 ```
 
 ### Docker运行
