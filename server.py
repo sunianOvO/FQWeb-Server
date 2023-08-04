@@ -398,7 +398,7 @@ def get_active_nodes():
 # 获取可用节点数
 @app.route('/available', methods=['GET'])
 def get_active_nodes_num():
-    return active_nodes, 200
+    return f'{active_nodes}', 200
 
 
 # 获取统计数据的接口
