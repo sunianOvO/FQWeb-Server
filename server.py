@@ -326,17 +326,33 @@ def reduce_load(domain):
 
 
 # 用户随机获取节点池中的域名（负载均衡）
-# @app.route('/random', methods=['GET'])
-# def get_random_domain():
-#     global total_requests, daily_requests
-#     total_requests += 1
-#     daily_requests += 1
-#
-#     if not node_pool:
-#         return '没有可用的域名', 404
-#
-#     domain = random.choice(node_pool)
-#     return domain['domain'], 200
+@app.route('/random', methods=['GET'])
+def get_random_domain():
+    global total_requests, daily_requests
+    total_requests += 1
+    daily_requests += 1
+
+    token = request.headers.get('token')
+    if not node_pool:
+        return '没有可用的域名', 404
+
+    if is_token_valid(token)[1] == 200:
+        domain = random.choice(node_pool)
+        return domain['domain'], 200
+
+    # 寻找非满载的节点进行选取，如果节点池中的节点均满载，则持续等待有非满载的节点进行选取
+    while True:
+        for domain in node_pool:
+            if 'load' not in domain:
+                domain['load'] = 0
+            if domain['load'] < max_load_per_node:
+                domain['load'] += 1
+                # 2秒后将载荷减1
+                threading.Timer(2, lambda: reduce_load(domain)).start()
+                log(f'节点载荷加一：{domain}')
+                return domain['domain'], 200
+        # 若所有节点都满载，则等待0.1秒后重新检查
+        time.sleep(0.1)
 
 
 # 获取所有活跃节点的域名，换行输出
