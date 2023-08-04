@@ -34,6 +34,7 @@ start_time = time.time()
 
 # 节点的最大载荷数
 max_load_per_node = 8
+delay_time = 2
 
 
 # 日志打印
@@ -170,7 +171,7 @@ def manage_domains():
                     recycle_bin.append(domain)
                     node_pool.remove(domain)
                 else:
-                    if 'token' in domain:
+                    if 'token' in domain and domain['token']:
                         add_or_update_token(domain['token'], 10 * 5)
 
             # Move domains from recycle bin back to node pool if they become accessible again
@@ -178,7 +179,7 @@ def manage_domains():
                 if is_domain_accessible(domain):
                     node_pool.append(domain)
                     recycle_bin.remove(domain)
-                    if 'token' in domain:
+                    if 'token' in domain and domain['token']:
                         add_or_update_token(domain['token'], 10 * 5)
 
             # Remove domains from recycle bin if they are inaccessible for more than an hour
@@ -324,14 +325,19 @@ def redirect_to_random_domain(any_url):
             if 'load' not in domain:
                 domain['load'] = 0
             if domain['load'] < max_load_per_node:
-                domain['load'] += 1
                 redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
-                # 2秒后将载荷减1
-                threading.Timer(2, lambda: reduce_load(domain)).start()
-                log(f'节点载荷加一：{domain}')
+                increase_load(domain)
                 return redirect(redirect_url, 302)
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
+
+
+def increase_load(domain):
+    global delay_time
+    domain['load'] += 1
+    # delay_time秒后将载荷减1
+    threading.Timer(delay_time, lambda: reduce_load(domain)).start()
+    log(f'节点载荷加一：{domain}')
 
 
 def reduce_load(domain):
@@ -352,6 +358,7 @@ def get_random_domain():
 
     if is_token_valid(token)[1] == 200:
         domain = random.choice(node_pool)
+        increase_load(domain)
         return domain['domain'], 200
 
     # 寻找非满载的节点进行选取，如果节点池中的节点均满载，则持续等待有非满载的节点进行选取
@@ -360,17 +367,14 @@ def get_random_domain():
             if 'load' not in domain:
                 domain['load'] = 0
             if domain['load'] < max_load_per_node:
-                domain['load'] += 1
-                # 2秒后将载荷减1
-                threading.Timer(2, lambda: reduce_load(domain)).start()
-                log(f'节点载荷加一：{domain}')
+                increase_load(domain)
                 return domain['domain'], 200
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
 
 
 # 获取所有活跃节点的域名，换行输出
-@app.route('/reading', methods=['GET'])
+@app.route('/status', methods=['GET'])
 def get_active_nodes():
     global total_requests, daily_requests, active_nodes, FQWEB_TOKEN
     total_requests += 1
@@ -381,9 +385,9 @@ def get_active_nodes():
     if not token or token != FQWEB_TOKEN:
         return '无效的token', 404
     if not node_pool:
-        return '没有可用的活跃节点', 404
+        return '没有可用的节点', 404
 
-    active_node_domains = '\n'.join(domain['domain'] for domain in node_pool)
+    active_node_domains = '\n'.join(node_pool)
     return active_node_domains, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
