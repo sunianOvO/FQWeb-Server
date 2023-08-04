@@ -15,7 +15,7 @@ python server.py
 
 ### Docker运行
 ```shell
-docker run -d --name=fqweb-server --restart=always -p 5000:5000 -v /data:/app/data -e TZ="Asia/Shanghai" fengyuecanzhu/fqweb-server
+docker run -d --name=fqweb-server --restart=always -p 5000:5000 -v /data:/app/data -e TZ="Asia/Shanghai" -e FQWEB_TOKEN="fqweb_token" fengyuecanzhu/fqweb-server
 ```
 
 ### Docker Compose
@@ -29,6 +29,7 @@ services:
       - "5000:5000"
     environment:
       - TZ=Asia/Shanghai
+      - FQWEB_TOKEN=fqweb_token
     volumes:
       - /data:/app/data  # 映射本地的/data目录到容器内的/app/data目录
 ```

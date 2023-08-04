@@ -7,5 +7,6 @@ services:
       - "5000:5000"
     environment:
       - TZ=Asia/Shanghai
+      - FQWEB_TOKEN=fqweb_token
     volumes:
       - /data:/app/data  # 映射本地的/data目录到容器内的/app/data目录
