@@ -100,6 +100,9 @@ def load_data_from_file():
     except FileNotFoundError:
         pass
 
+    for node in node_pool + recycle_bin:
+        node['load'] = 0
+
 
 # Save node pool and recycle bin to files
 def save_data_to_file():
