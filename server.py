@@ -35,7 +35,9 @@ start_time = time.time()
 # 节点的最大载荷数
 max_load_per_node = 8
 delay_time = 2
-allow_urls = ['search', 'info', 'catalog', 'content', 'reading/bookapi/bookmall/cell/change/v1/', 'reading/bookapi/new_category/landing/v/']
+allow_urls = ['search', 'info', 'catalog', 'content', 'reading/bookapi/bookmall/cell/change/v1/',
+              'reading/bookapi/new_category/landing/v/']
+
 
 # 日志打印
 def log(msg):
@@ -418,7 +420,7 @@ def get_statistics():
         f"日请求次数：{daily_requests}\n"
         f"共享节点数：{shared_nodes}\n"
         f"活跃节点数：{active_nodes}\n"
-        f"请求队列数：{get_all_loads()}\n"
+        f"请求队列数：{get_all_loads()}/{active_nodes * 8}\n"
         f"运行时间（小时）：{uptime_hours}"
     )
     return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
@@ -435,6 +437,7 @@ def get_all_loads():
         if 'load' in domain:
             loads += domain['load']
     return loads
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
