@@ -151,7 +151,7 @@ def is_domain_accessible(domain):
     try:
         # log(f'检测节点是否有效：{domain["domain"]}')
         url = f'http://{domain["domain"]}/content'
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
             domain['timestamp'] = time.time()
             return True
