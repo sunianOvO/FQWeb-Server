@@ -418,6 +418,7 @@ def get_statistics():
         f"日请求次数：{daily_requests}\n"
         f"共享节点数：{shared_nodes}\n"
         f"活跃节点数：{active_nodes}\n"
+        f"请求队列数：{get_all_loads()}\n"
         f"运行时间（小时）：{uptime_hours}"
     )
     return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
@@ -427,6 +428,13 @@ def get_statistics():
 def main_page():
     return redirect('https://github.com/fengyuecanzhu/FQWeb', 302)
 
+
+def get_all_loads():
+    loads = 0
+    for domain in node_pool:
+        if 'load' in domain:
+            loads += domain['load']
+    return loads
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
