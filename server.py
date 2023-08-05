@@ -149,7 +149,7 @@ schedule.every().day.at("00:00").do(reset_daily_requests)
 # Helper function to check if a domain is accessible (e.g., not 404)
 def is_domain_accessible(domain):
     try:
-        log(f'检测节点是否有效：{domain["domain"]}')
+        # log(f'检测节点是否有效：{domain["domain"]}')
         url = f'http://{domain["domain"]}/content'
         response = requests.get(url)
         if response.status_code == 200:
@@ -174,9 +174,10 @@ def is_valid_domain_name(domain):
 
 # Helper function to manage domain status in the node pool and recycle bin
 def manage_domains():
+    delta = 0
     while True:
         try:
-            start_time = time.time()
+            start_check_time = time.time()
             # Move domains from node pool to recycle bin if they are not accessible
             for domain in node_pool:
                 if domain['domain'] in block_domains:
@@ -187,7 +188,6 @@ def manage_domains():
                     node_pool.remove(domain)
                 else:
                     if 'token' in domain and domain['token']:
-                        delta = int(time.time() - start_time)
                         add_or_update_token(domain['token'], (10 + delta) * 3)
 
             # Move domains from recycle bin back to node pool if they become accessible again
@@ -196,7 +196,6 @@ def manage_domains():
                     node_pool.append(domain)
                     recycle_bin.remove(domain)
                     if 'token' in domain and domain['token']:
-                        delta = int(time.time() - start_time)
                         add_or_update_token(domain['token'], (10 + delta) * 3)
 
             # Remove domains from recycle bin if they are inaccessible for more than an hour
@@ -220,6 +219,11 @@ def manage_domains():
             save_data_to_file()
             # 启动定时任务
             schedule.run_pending()
+
+            # 完成
+            delta = int(time.time() - start_check_time)
+            log(f"manage_domains执行完成，耗时：{delta}秒")
+
             # Wait for 10 seconds before rechecking domains
             time.sleep(10)
         except Exception as e:
