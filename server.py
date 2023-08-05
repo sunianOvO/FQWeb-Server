@@ -1,6 +1,5 @@
 import datetime
 import os
-import random
 import re
 import sys
 import threading
@@ -157,7 +156,8 @@ def is_domain_accessible(domain):
             return True
         else:
             return False
-    except Exception:
+    except Exception as e:
+        log(f'检测节点{domain["domain"]}出错：{e}')
         return False
 
 
@@ -227,7 +227,7 @@ def manage_domains():
             # Wait for 10 seconds before rechecking domains
             time.sleep(10)
         except Exception as e:
-            log(e)
+            log(f'manage_domains出错：{e}')
 
 
 # Start the domain management thread
