@@ -382,12 +382,12 @@ def increase_load(domain):
     domain['load'] += 1
     # delay_time秒后将载荷减1
     threading.Timer(delay_time, lambda: reduce_load(domain)).start()
-    log(f'节点载荷加一：{domain}')
+    # log(f'节点载荷加一：{domain}')
 
 
 def reduce_load(domain):
     domain['load'] -= 1
-    log(f'节点载荷减一：{domain}')
+    # log(f'节点载荷减一：{domain}')
 
 
 # 获取所有活跃节点的域名，换行输出
