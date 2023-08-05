@@ -24,6 +24,7 @@ os.makedirs(data_dir, exist_ok=True)
 node_pool = []
 recycle_bin = []
 tokens = []
+block_domains = []
 
 # 统计数据变量
 total_requests = 0
@@ -102,6 +103,14 @@ def load_data_from_file():
     except FileNotFoundError:
         pass
 
+    try:
+        with open(os.path.join(data_dir, "block_domains.json"), "r") as block_domains_file:
+            global block_domains
+            block_domains = json.load(block_domains_file)
+            log(f'加载block_domains数据')
+    except FileNotFoundError:
+        pass
+
     for node in node_pool + recycle_bin:
         node['load'] = 0
 
@@ -170,6 +179,9 @@ def manage_domains():
             start_time = time.time()
             # Move domains from node pool to recycle bin if they are not accessible
             for domain in node_pool:
+                if domain['domain'] in block_domains:
+                    node_pool.remove(domain)
+                    continue
                 if not is_domain_accessible(domain):
                     recycle_bin.append(domain)
                     node_pool.remove(domain)
@@ -186,7 +198,7 @@ def manage_domains():
                     if 'token' in domain and domain['token']:
                         delta = int(time.time() - start_time)
                         add_or_update_token(domain['token'], (10 + delta) * 3)
-                      
+
             # Remove domains from recycle bin if they are inaccessible for more than an hour
             for domain in recycle_bin:
                 if time.time() - domain['timestamp'] >= 3600:
@@ -291,6 +303,9 @@ def upload_domain():
 
     if not is_valid_domain_name(domain):
         return '不合法的域名', 400
+
+    if domain in block_domains:
+        return '域名已被封禁', 400
 
     if is_domain_exists(domain):
         return '该域名已存在于节点池', 400
@@ -427,6 +442,60 @@ def get_statistics():
         f"运行时间（小时）：{uptime_hours}"
     )
     return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
+
+@app.route('/block', methods=['GET'])
+def block_domain():
+    global total_requests, daily_requests, active_nodes, FQWEB_TOKEN
+    total_requests += 1
+    daily_requests += 1
+    token = request.args.get("token")
+    if not FQWEB_TOKEN:
+        return '未设置TOKEN', 404
+    if not token or token != FQWEB_TOKEN:
+        return '无效的token', 404
+    domain = request.args.get('domain')
+    if not domain:
+        return '未提供域名', 400
+
+    block_domains.append(domain)
+    with open(os.path.join(data_dir, 'block_domains.json'), 'w') as block_domains_file:
+        json.dump(block_domains, block_domains_file)
+
+    return '添加黑名单成功', 400
+
+
+@app.route('/clear/blocks', methods=['GET'])
+def clear_block_domains():
+    global total_requests, daily_requests, active_nodes, FQWEB_TOKEN
+    total_requests += 1
+    daily_requests += 1
+    token = request.args.get("token")
+    if not FQWEB_TOKEN:
+        return '未设置TOKEN', 404
+    if not token or token != FQWEB_TOKEN:
+        return '无效的token', 404
+
+    block_domains.clear()
+    with open(os.path.join(data_dir, 'block_domains.json'), 'w') as block_domains_file:
+        json.dump(block_domains, block_domains_file)
+
+    return '黑名单清理成功', 400
+
+
+@app.route('/get/blocks', methods=['GET'])
+def get_block_domains():
+    global total_requests, daily_requests, active_nodes, FQWEB_TOKEN
+    total_requests += 1
+    daily_requests += 1
+    token = request.args.get("token")
+    if not FQWEB_TOKEN:
+        return '未设置TOKEN', 404
+    if not token or token != FQWEB_TOKEN:
+        return '无效的token', 404
+    if not block_domains:
+        return '没有封禁的域名', 404
+    return '\n'.join(block_domains), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
 @app.route('/', methods=['GET'])
