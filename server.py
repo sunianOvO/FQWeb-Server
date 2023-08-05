@@ -140,7 +140,11 @@ def is_domain_accessible(domain):
     try:
         log(f'检测节点是否有效：{domain["domain"]}')
         url = f'http://{domain["domain"]}/content?item_id=1'
+        if 'load' not in domain:
+            domain['load'] = 0
+        domain['load'] += 1
         response = requests.get(url)
+        domain['load'] -= 1
         if response.status_code == 200 and '该书不存在' in response.text:
             domain['timestamp'] = time.time()
             return True
