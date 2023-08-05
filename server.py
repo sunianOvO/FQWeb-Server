@@ -413,14 +413,14 @@ def get_active_nodes_num():
 # 获取统计数据的接口
 @app.route('/stats', methods=['GET'])
 def get_statistics():
-    global total_requests, daily_requests, shared_nodes, active_nodes, start_time
+    global total_requests, daily_requests, shared_nodes, active_nodes, start_time, max_load_per_node
     uptime_hours = round((time.time() - start_time) / 3600, 2)
     stats_text = (
         f"总请求次数：{total_requests}\n"
         f"日请求次数：{daily_requests}\n"
         f"共享节点数：{shared_nodes}\n"
         f"活跃节点数：{active_nodes}\n"
-        f"请求队列数：{get_all_loads()}/{active_nodes * 8}\n"
+        f"请求队列数：{get_all_loads()}/{active_nodes * max_load_per_node}\n"
         f"运行时间（小时）：{uptime_hours}"
     )
     return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
