@@ -416,6 +416,11 @@ def get_statistics():
     return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
+@app.route('/', methods=['GET'])
+def main_page():
+    return redirect('https://github.com/fengyuecanzhu/FQWeb', 302)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         FQWEB_TOKEN = sys.argv[1]
