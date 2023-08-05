@@ -35,7 +35,7 @@ start_time = time.time()
 # 节点的最大载荷数
 max_load_per_node = 8
 delay_time = 2
-
+allow_urls = ['search', 'info', 'catalog', 'content', 'reading/bookapi/bookmall/cell/change/v1/', 'reading/bookapi/new_category/landing/v/']
 
 # 日志打印
 def log(msg):
@@ -313,6 +313,9 @@ def redirect_to_random_domain(any_url):
     token = request.headers.get('token')
     if not node_pool:
         return '没有可用的域名', 404
+
+    if any_url not in allow_urls:
+        return "不合法的url", 404
 
     if is_token_valid(token)[1] == 200:
         domain = random.choice(node_pool)
