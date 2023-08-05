@@ -239,6 +239,13 @@ def is_domain_exists(domain):
     return False
 
 
+def is_domain_exists_by_token(token):
+    for node in node_pool:
+        if 'token' in node and node['token'] == token:
+            return True
+    return False
+
+
 def is_valid_token(token):
     pattern = r'^[A-Za-z0-9]+$'
     # 使用re.match函数进行匹配
@@ -429,12 +436,17 @@ def check_domain():
     daily_requests += 1
 
     domain = request.args.get('domain')
+    token = request.args.get('token')
+    if domain:
+        if domain in block_domains:
+            return '节点已被封禁', 200
 
-    if domain in block_domains:
-        return '节点已被封禁', 200
+        if is_domain_exists(domain):
+            return '节点状态：在线', 200
 
-    if is_domain_exists(domain):
-        return '节点状态：在线', 200
+    if token:
+        if is_domain_exists_by_token(token):
+            return '节点状态：在线', 200
 
     return '节点不存在或者已离线', 200
 
