@@ -139,9 +139,9 @@ schedule.every().day.at("00:00").do(reset_daily_requests)
 def is_domain_accessible(domain):
     try:
         log(f'检测节点是否有效：{domain["domain"]}')
-        url = f'http://{domain["domain"]}/content'
+        url = f'http://{domain["domain"]}/content?item_id=1'
         response = requests.get(url)
-        if response.status_code == 200:
+        if response.status_code == 200 and '该书不存在' in response.text:
             domain['timestamp'] = time.time()
             return True
         else:
