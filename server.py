@@ -422,6 +422,23 @@ def get_active_nodes():
     return active_node_domains, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
+@app.route('/check', methods=['GET'])
+def check_domain():
+    global total_requests, daily_requests
+    total_requests += 1
+    daily_requests += 1
+
+    domain = request.args.get('domain')
+
+    if domain in block_domains:
+        return '节点已被封禁', 200
+
+    if is_domain_exists(domain):
+        return '节点状态：在线', 200
+
+    return '节点不存在或者已离线', 200
+
+
 # 获取可用节点数
 @app.route('/available', methods=['GET'])
 def get_active_nodes_num():
