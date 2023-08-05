@@ -141,13 +141,9 @@ schedule.every().day.at("00:00").do(reset_daily_requests)
 def is_domain_accessible(domain):
     try:
         log(f'检测节点是否有效：{domain["domain"]}')
-        url = f'http://{domain["domain"]}/content?item_id=1'
-        if 'load' not in domain:
-            domain['load'] = 0
-        domain['load'] += 1
+        url = f'http://{domain["domain"]}/content'
         response = requests.get(url)
-        domain['load'] -= 1
-        if response.status_code == 200 and '该书不存在' in response.text:
+        if response.status_code == 200:
             domain['timestamp'] = time.time()
             return True
         else:
@@ -179,7 +175,7 @@ def manage_domains():
                     node_pool.remove(domain)
                 else:
                     if 'token' in domain and domain['token']:
-                        delta = time.time() - start_time
+                        delta = int(time.time() - start_time)
                         add_or_update_token(domain['token'], (10 + delta) * 3)
 
             # Move domains from recycle bin back to node pool if they become accessible again
@@ -188,7 +184,7 @@ def manage_domains():
                     node_pool.append(domain)
                     recycle_bin.remove(domain)
                     if 'token' in domain and domain['token']:
-                        delta = time.time() - start_time
+                        delta = int(time.time() - start_time)
                         add_or_update_token(domain['token'], (10 + delta) * 3)
                       
             # Remove domains from recycle bin if they are inaccessible for more than an hour
