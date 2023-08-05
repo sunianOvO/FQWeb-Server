@@ -172,7 +172,7 @@ def manage_domains():
                     node_pool.remove(domain)
                 else:
                     if 'token' in domain and domain['token']:
-                        add_or_update_token(domain['token'], 10 * 5)
+                        add_or_update_token(domain['token'], 10 * 2)
 
             # Move domains from recycle bin back to node pool if they become accessible again
             for domain in recycle_bin:
@@ -180,7 +180,7 @@ def manage_domains():
                     node_pool.append(domain)
                     recycle_bin.remove(domain)
                     if 'token' in domain and domain['token']:
-                        add_or_update_token(domain['token'], 10 * 5)
+                        add_or_update_token(domain['token'], 10 * 2)
 
             # Remove domains from recycle bin if they are inaccessible for more than an hour
             for domain in recycle_bin:
