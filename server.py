@@ -287,9 +287,9 @@ def token_valid():
 
 # 判断token是否有效
 def is_token_valid(token):
-    log(f'判断token是否有效：{token}')
     if not token:
         return '未提供token', 400
+    # log(f'判断token是否有效：{token}')
     for token_obj in tokens:
         if token_obj['token'] == token:
             if token_obj['expire_time'] < time.time():
