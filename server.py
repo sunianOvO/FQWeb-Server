@@ -324,7 +324,9 @@ def redirect_to_random_domain(any_url):
         return "不合法的url", 404
 
     if is_token_valid(token)[1] == 200:
-        domain = random.choice(node_pool)
+        nodes = node_pool.copy()
+        nodes.sort(key=lambda x: x.get('load', 0))
+        domain = nodes[0]
         redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
         return redirect(redirect_url, 302)
 
@@ -332,13 +334,13 @@ def redirect_to_random_domain(any_url):
     nodes = node_pool.copy()
     while True:
         nodes.sort(key=lambda x: x.get('load', 0))
-        for domain in nodes:
-            if 'load' not in domain:
-                domain['load'] = 0
-            if domain['load'] < max_load_per_node:
-                redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
-                increase_load(domain)
-                return redirect(redirect_url, 302)
+        domain = nodes[0]
+        if 'load' not in domain:
+            domain['load'] = 0
+        if domain['load'] < max_load_per_node:
+            redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
+            increase_load(domain)
+            return redirect(redirect_url, 302)
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
 
@@ -355,7 +357,9 @@ def get_random_domain():
         return '没有可用的域名', 404
 
     if is_token_valid(token)[1] == 200:
-        domain = random.choice(node_pool)
+        nodes = node_pool.copy()
+        nodes.sort(key=lambda x: x.get('load', 0))
+        domain = nodes[0]
         increase_load(domain)
         return domain['domain'], 200
 
@@ -363,12 +367,12 @@ def get_random_domain():
     nodes = node_pool.copy()
     while True:
         nodes.sort(key=lambda x: x.get('load', 0))
-        for domain in nodes:
-            if 'load' not in domain:
-                domain['load'] = 0
-            if domain['load'] < max_load_per_node:
-                increase_load(domain)
-                return domain['domain'], 200
+        domain = nodes[0]
+        if 'load' not in domain:
+            domain['load'] = 0
+        if domain['load'] < max_load_per_node:
+            increase_load(domain)
+            return domain['domain'], 200
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
 
