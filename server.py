@@ -331,7 +331,7 @@ def redirect_to_random_domain(any_url):
     # 寻找非满载的节点进行重定向，如果节点池中的节点均满载，则持续等待有非满载的节点进行重定向
     nodes = node_pool.copy()
     while True:
-        random.shuffle(nodes)
+        nodes.sort(key=lambda x: x.get('load', 0))
         for domain in nodes:
             if 'load' not in domain:
                 domain['load'] = 0
@@ -362,7 +362,7 @@ def get_random_domain():
     # 寻找非满载的节点进行选取，如果节点池中的节点均满载，则持续等待有非满载的节点进行选取
     nodes = node_pool.copy()
     while True:
-        random.shuffle(nodes)
+        nodes.sort(key=lambda x: x.get('load', 0))
         for domain in nodes:
             if 'load' not in domain:
                 domain['load'] = 0
