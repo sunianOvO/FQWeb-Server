@@ -375,7 +375,7 @@ def get_random_domain():
         nodes.sort(key=lambda x: x.get('load', 0))
         domain = nodes[0]
         increase_load(domain)
-        return domain['domain'], 200
+        return f"http://{domain['domain']}", 200
 
     # 寻找非满载的节点进行选取，如果节点池中的节点均满载，则持续等待有非满载的节点进行选取
     nodes = node_pool.copy()
@@ -386,7 +386,7 @@ def get_random_domain():
             domain['load'] = 0
         if domain['load'] < max_load_per_node:
             increase_load(domain)
-            return domain['domain'], 200
+            return f"http://{domain['domain']}", 200
         # 若所有节点都满载，则等待0.1秒后重新检查
         time.sleep(0.1)
 
