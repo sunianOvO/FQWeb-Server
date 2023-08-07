@@ -163,7 +163,7 @@ def is_domain_accessible(domain):
 
 def is_valid_domain_name(domain):
     # 定义域名的正则表达式模式
-    domain_pattern = r'^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
+    domain_pattern = r'^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?::(\d{1,5}))?$'
 
     # 使用re.match函数进行匹配
     if re.match(domain_pattern, domain):
