@@ -36,6 +36,7 @@ start_time = time.time()
 # 节点的最大载荷数
 max_load_per_node = 8
 delay_time = 4
+max_remove_time = 60 * 30
 allow_urls = ['search', 'info', 'catalog', 'content', 'reading/bookapi/bookmall/cell/change/v1/',
               'reading/bookapi/new_category/landing/v/']
 
@@ -204,7 +205,7 @@ def manage_domains():
 
             # Remove domains from recycle bin if they are inaccessible for more than an hour
             for domain in recycle_bin:
-                if time.time() - domain['timestamp'] >= 3600:
+                if time.time() - domain['timestamp'] >= max_remove_time:
                     recycle_bin.remove(domain)
 
             # Remove tokens if they are invalid
