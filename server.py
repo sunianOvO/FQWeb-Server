@@ -12,6 +12,10 @@ from flask import Flask, request, redirect
 
 app = Flask(__name__)
 
+VERSION_CODE = 110
+
+VERSION_NAME = "v" + ".".join(str(VERSION_CODE))
+
 # 管理员TOKEN
 FQWEB_TOKEN = os.environ.get("FQWEB_TOKEN")
 
@@ -68,7 +72,7 @@ def load_statistics():
     try:
         with open(os.path.join(data_dir, "statistics.json"), "r") as file:
             stats = json.load(file)
-            global total_requests, daily_requests, shared_nodes, active_nodes, start_time
+            global total_requests, daily_requests, shared_nodes, active_nodes, start_time, yesterday_requests
             total_requests = stats.get("total_requests", 0)
             daily_requests = stats.get("daily_requests", 0)
             yesterday_requests = stats.get("yesterday_requests", 0)
@@ -140,7 +144,7 @@ load_data_from_file()
 
 # 每天零点清零日请求次数
 def reset_daily_requests():
-    global daily_requests
+    global daily_requests, yesterday_requests
     yesterday_requests = daily_requests
     daily_requests = 0
     log(f'日请求清零')
@@ -277,6 +281,15 @@ def add_or_update_token(token, add_time=10):
                 token_obj['expire_time'] = token_obj['expire_time'] + add_time
             return
     tokens.append({'token': token, 'expire_time': time.time() + add_time})
+
+
+# 在每个请求之前调用此函数，可以对响应进行处理
+@app.after_request
+def add_headers(response):
+    # 添加自定义的响应头
+    response.headers['server-version-code'] = VERSION_CODE
+    response.headers['server-version-name'] = VERSION_NAME
+    return response
 
 
 # 检测token是否有效
@@ -478,7 +491,8 @@ def get_statistics():
         f"共享节点数：{shared_nodes}\n"
         f"活跃节点数：{active_nodes}\n"
         f"请求队列数：{get_all_loads()}/{active_nodes * max_load_per_node}\n"
-        f"运行时间（小时）：{uptime_hours}"
+        f"运行时间(小时)：{uptime_hours}\n"
+        f"当前服务版本：{VERSION_NAME}"
     )
     return stats_text, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
