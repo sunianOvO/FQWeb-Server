@@ -28,13 +28,14 @@ block_domains = []
 # 统计数据变量
 total_requests = 0
 daily_requests = 0
+yesterday_requests = 0
 shared_nodes = 0
 active_nodes = 0
 start_time = time.time()
 
 # 节点的最大载荷数
 max_load_per_node = 8
-delay_time = 2
+delay_time = 4
 allow_urls = ['search', 'info', 'catalog', 'content', 'reading/bookapi/bookmall/cell/change/v1/',
               'reading/bookapi/new_category/landing/v/']
 
@@ -51,6 +52,7 @@ def save_statistics():
     stats = {
         "total_requests": total_requests,
         "daily_requests": daily_requests,
+        "yesterday_requests": yesterday_requests,
         "shared_nodes": shared_nodes,
         "active_nodes": active_nodes,
         "start_time": start_time
@@ -68,6 +70,7 @@ def load_statistics():
             global total_requests, daily_requests, shared_nodes, active_nodes, start_time
             total_requests = stats.get("total_requests", 0)
             daily_requests = stats.get("daily_requests", 0)
+            yesterday_requests = stats.get("yesterday_requests", 0)
             shared_nodes = stats.get("shared_nodes", 0)
             active_nodes = stats.get("active_nodes", 0)
             start_time = stats.get("start_time", time.time())
@@ -137,6 +140,7 @@ load_data_from_file()
 # 每天零点清零日请求次数
 def reset_daily_requests():
     global daily_requests
+    yesterday_requests = daily_requests
     daily_requests = 0
     log(f'日请求清零')
 
@@ -469,6 +473,7 @@ def get_statistics():
     stats_text = (
         f"总请求次数：{total_requests}\n"
         f"日请求次数：{daily_requests}\n"
+        f"昨日请求数：{yesterday_requests}\n"
         f"共享节点数：{shared_nodes}\n"
         f"活跃节点数：{active_nodes}\n"
         f"请求队列数：{get_all_loads()}/{active_nodes * max_load_per_node}\n"
