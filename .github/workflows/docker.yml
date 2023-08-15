@@ -9,6 +9,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - '**.md'
+      - '**.json'
       - '.github/**'
       - '.idea/**'
       - '!.github/workflows/**'
@@ -16,6 +17,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - '**.md'
+      - '**.json'
       - '.github/**'
       - '.idea/**'
       - '!.github/workflows/**'
