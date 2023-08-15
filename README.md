@@ -2,6 +2,8 @@
 
 ## 使用
 
+注意：请将下面所有命令中的fqweb_token修改为你自己设置的Token，这个Token可以用来执行一些管理员命令
+
 ### python运行
 ```shell
 git clone https://github.com/fengyuecanzhu/FQWeb-Server.git
