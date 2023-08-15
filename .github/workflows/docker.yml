@@ -44,7 +44,7 @@ jobs:
         name: Get current commit_id
         id: commitId
         run: |
-          COMMIT_ID = $(git rev-parse --short HEAD)
+          COMMIT_ID=$(git rev-parse --short HEAD)
           echo commit_id="$COMMIT_ID" >> $GITHUB_OUTPUT
           sed -i "s/COMMIT_ID = \"\"/COMMIT_ID = \"-$COMMIT_ID\"/" server.py
       -
