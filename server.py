@@ -329,8 +329,7 @@ def is_token_valid(token):
             if token_obj['expire_time'] < time.time():
                 return 'token已失效', 400
             else:
-                return f'有效的token，过期时间：' \
-                       f'{time.strftime("%Y.%m.%d %H:%M:%S", time.localtime(token_obj["expire_time"]))}', 200
+                return f'{time.strftime("%Y.%m.%d %H:%M:%S", time.localtime(token_obj["expire_time"]))}', 200
     return 'token不存在', 400
 
 
