@@ -1,7 +1,7 @@
 {
   "enable": true,
-  "minVersion": 142,
-  "minVersionName": "1.4.2",
+  "minVersion": 150,
+  "minVersionName": "1.5.0",
   "servers": [
     {
       "enable": true,
