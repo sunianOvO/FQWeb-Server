@@ -41,9 +41,12 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       -
-        name: Get current date
-        id: date
-        run: echo today="$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        name: Get current commit_id
+        id: commitId
+        run: |
+          commit_id = $(git rev-parse --short HEAD)
+          echo commit_id="$commit_id" >> $GITHUB_OUTPUT
+          sed -i "s/COMMIT_ID = \"\"/COMMIT_ID = \"-$COMMIT_ID\"/" server.py
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -82,4 +85,4 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/fqweb-server:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/fqweb-server:${{ steps.date.outputs.today }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fqweb-server:${{ steps.commitId.outputs.commit_id }}

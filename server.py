@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+import subprocess
 import sys
 import threading
 import time
@@ -12,9 +13,24 @@ from flask import Flask, request, redirect
 
 app = Flask(__name__)
 
+
+# 获取最新的commit_id
+def get_latest_commit_id():
+    try:
+        commit_id = '-' + subprocess.check_output('git rev-parse --short HEAD', shell=True).decode().strip()
+        return commit_id
+    except Exception:
+        return ""
+
+
 VERSION_CODE = 110
 
-VERSION_NAME = "v" + ".".join(str(VERSION_CODE))
+COMMIT_ID = ""
+
+if not COMMIT_ID:
+    COMMIT_ID = get_latest_commit_id()
+
+VERSION_NAME = "v" + ".".join(str(VERSION_CODE)) + COMMIT_ID
 
 # 管理员TOKEN
 FQWEB_TOKEN = os.environ.get("FQWEB_TOKEN")
@@ -38,8 +54,8 @@ active_nodes = 0
 start_time = time.time()
 
 # 节点的最大载荷数
-max_load_per_node = 8
-delay_time = 4
+max_load_per_node = 4
+process_time = 5
 max_remove_time = 60 * 30
 allow_urls = ['search', 'info', 'catalog', 'content', 'reading/bookapi/bookmall/cell/change/v1/',
               'reading/bookapi/new_category/landing/v/']
@@ -421,10 +437,10 @@ def get_random_domain():
 
 
 def increase_load(domain):
-    global delay_time
+    global process_time
     domain['load'] += 1
     # delay_time秒后将载荷减1
-    threading.Timer(delay_time, lambda: reduce_load(domain)).start()
+    threading.Timer(process_time, lambda: reduce_load(domain)).start()
     # log(f'节点载荷加一：{domain}')
 
 
