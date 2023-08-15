@@ -13,6 +13,8 @@ from flask import Flask, request, redirect
 
 app = Flask(__name__)
 
+VERSION_CODE = 111
+
 
 # 获取最新的commit_id
 def get_latest_commit_id():
@@ -22,8 +24,6 @@ def get_latest_commit_id():
     except Exception:
         return ""
 
-
-VERSION_CODE = 110
 
 COMMIT_ID = ""
 
