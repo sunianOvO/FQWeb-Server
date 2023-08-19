@@ -8,9 +8,9 @@
       "name": "苏念API",
       "owner": "sunianOvO",
       "frpcConfig": "[common]\nserver_addr = frp.104300.xyz\nserver_port = 7000\ntoken = www.126126.xyz\n\n[fqweb_{timestamp}]\ntype = http\nlocal_ip = 127.0.0.1\nlocal_port = {port}\ncustom_domains = {domain}",
-      "url": "http://list.api-fanqienovel.sunianyun.live",
+      "url": "http://reading.api-fanqienovel.sunianyun.live",
       "customDomain": "{timestamp}.api-fanqienovel.sunianyun.live",
-      "uploadDomainUrl": "http://list.api-fanqienovel.sunianyun.live/upload?domain={domain}&token={token}",
+      "uploadDomainUrl": "http://reading.api-fanqienovel.sunianyun.live/upload?domain={domain}&token={token}",
       "uploadOnlySelf": false
     },
     {
