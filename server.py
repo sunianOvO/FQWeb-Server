@@ -269,6 +269,9 @@ def is_domain_accessible_strictly(domain):
         domain['load'] += 1
         response = requests.get(url)
         domain['load'] -= 1
+        # 节点失效不需要添加黑名单
+        if response.status_code == 404:
+            return True
         if response.status_code == 200 and '该书不存在' in response.text:
             domain['timestamp'] = time.time()
             return True
@@ -620,7 +623,7 @@ def get_block_domains():
         return '无效的token', 404
     if not block_domains:
         return '没有封禁的域名', 404
-    return '\n'.join(block_domains), 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    return '\n'.join([str(domain) for domain in block_domains]), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
 @app.route('/', methods=['GET'])
