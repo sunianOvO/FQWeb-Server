@@ -260,6 +260,65 @@ domain_manager_thread = threading.Thread(target=manage_domains, name="Check doma
 domain_manager_thread.start()
 
 
+def is_domain_accessible_strictly(domain):
+    try:
+        # log(f'检测节点是否有效：{domain["domain"]}')
+        url = f'http://{domain["domain"]}/catalog?book_id=1'
+        if 'load' not in domain:
+            domain['load'] = 0
+        domain['load'] += 1
+        response = requests.get(url)
+        domain['load'] -= 1
+        if response.status_code == 200 and '该书不存在' in response.text:
+            domain['timestamp'] = time.time()
+            return True
+        else:
+            return False
+    except Exception as e:
+        domain['load'] -= 1
+        log(f'严格检测节点{domain["domain"]}出错：{e}')
+        return False
+
+
+def manage_domains_strictly():
+    while True:
+        try:
+            start_check_time = time.time()
+            for domain in node_pool:
+                flag = False
+                for i in range(0, 5):
+                    if is_domain_accessible_strictly(domain):
+                        flag = True
+                        break
+                if not flag:
+                    node_pool.remove(domain)
+                    add_block_domain(domain['domain'])
+            # 完成
+            delta = int(time.time() - start_check_time)
+            log(f"manage_domains_strictly执行完成，耗时：{delta}秒")
+
+            # Wait for 10 seconds before rechecking domains
+            time.sleep(10 * 60)
+        except Exception as e:
+            log(f'manage_domains_strictly出错：{e}')
+
+
+domain_manager_thread_strictly = threading.Thread(target=manage_domains_strictly, name="Check domain strictly",
+                                                  daemon=True)
+domain_manager_thread_strictly.start()
+
+
+def fmt_time(time_):
+    return time.strftime("%Y.%m.%d %H:%M:%S", time.localtime(time_))
+
+
+def add_block_domain(domain):
+    block_domains.append({'domain': domain, 'time': fmt_time(time.time())})
+    with open(os.path.join(data_dir, 'block_domains.json'), 'w') as block_domains_file:
+        json.dump(block_domains, block_domains_file)
+    log(f'黑名单添加成功：{domain}')
+
+
 # Helper function to check if a domain exists in node pool or recycle bin
 def is_domain_exists(domain):
     for node in node_pool:
@@ -329,7 +388,7 @@ def is_token_valid(token):
             if token_obj['expire_time'] < time.time():
                 return 'token已失效', 400
             else:
-                return f'{time.strftime("%Y.%m.%d %H:%M:%S", time.localtime(token_obj["expire_time"]))}', 200
+                return f'{fmt_time(token_obj["expire_time"])}', 200
     return 'token不存在', 400
 
 
@@ -526,9 +585,7 @@ def block_domain():
     if not domain:
         return '未提供域名', 400
 
-    block_domains.append(domain)
-    with open(os.path.join(data_dir, 'block_domains.json'), 'w') as block_domains_file:
-        json.dump(block_domains, block_domains_file)
+    add_block_domain(domain)
 
     return '添加黑名单成功', 400
 
