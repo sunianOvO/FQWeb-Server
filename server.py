@@ -13,7 +13,7 @@ from flask import Flask, request, redirect
 
 app = Flask(__name__)
 
-VERSION_CODE = 111
+VERSION_CODE = 112
 
 
 # 获取最新的commit_id
