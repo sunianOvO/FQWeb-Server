@@ -438,7 +438,7 @@ def redirect_to_random_domain(any_url):
 
     # 版本不安全导致content失效，暂时改成官方api
     if any_url == 'content':
-        redirect_url = f"https://novel.snssdk.com/api/novel/book/reader/full/v1/?{request.query_string.decode('utf-8')}&aid=9"
+        redirect_url = f"https://novel.snssdk.com/api/novel/book/reader/full/v1/?{request.query_string.decode('utf-8')}&aid=2329"
         return redirect(redirect_url, 302)
 
     token = request.headers.get('token')
