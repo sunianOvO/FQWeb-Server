@@ -436,6 +436,11 @@ def redirect_to_random_domain(any_url):
     total_requests += 1
     daily_requests += 1
 
+    # 版本不安全导致content失效，暂时改成官方api
+    if any_url == 'content':
+        redirect_url = f"https://novel.snssdk.com/api/novel/book/reader/full/v1/?{request.query_string.decode('utf-8')}&aid=9"
+        return redirect(redirect_url, 302)
+
     token = request.headers.get('token')
     if not node_pool:
         return '没有可用的域名', 404
