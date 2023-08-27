@@ -410,7 +410,7 @@ def upload_domain():
     if not is_valid_domain_name(domain):
         return '不合法的域名', 400
 
-    if domain in block_domains:
+    if domain in [block['domain'] for block in block_domains]:
         return '域名已被封禁', 400
 
     if is_domain_exists(domain):
