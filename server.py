@@ -205,7 +205,7 @@ def manage_domains():
             start_check_time = time.time()
             # Move domains from node pool to recycle bin if they are not accessible
             for domain in node_pool:
-                if domain['domain'] in block_domains:
+                if domain['domain'] in [block['domain'] for block in block_domains]:
                     node_pool.remove(domain)
                     continue
                 if not is_domain_accessible(domain):
