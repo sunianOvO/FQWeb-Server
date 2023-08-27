@@ -263,7 +263,7 @@ domain_manager_thread.start()
 def is_domain_accessible_strictly(domain):
     try:
         # log(f'检测节点是否有效：{domain["domain"]}')
-        url = f'http://{domain["domain"]}/catalog?book_id=1'
+        url = f'http://{domain["domain"]}/content?item_id=1'
         if 'load' not in domain:
             domain['load'] = 0
         domain['load'] += 1
@@ -437,9 +437,9 @@ def redirect_to_random_domain(any_url):
     daily_requests += 1
 
     # 版本不安全导致content失效，暂时改成官方api
-    if any_url == 'content':
-        redirect_url = f"https://novel.snssdk.com/api/novel/book/reader/full/v1/?{request.query_string.decode('utf-8')}&aid=2329"
-        return redirect(redirect_url, 302)
+    # if any_url == 'content':
+    #     redirect_url = f"https://novel.snssdk.com/api/novel/book/reader/full/v1/?{request.query_string.decode('utf-8')}&aid=2329"
+    #     return redirect(redirect_url, 302)
 
     token = request.headers.get('token')
     if not node_pool:
