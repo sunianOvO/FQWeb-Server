@@ -416,6 +416,9 @@ def upload_domain():
     if is_domain_exists(domain):
         return '该域名已存在于节点池', 400
 
+    if not is_domain_accessible({'domian': domain}):
+        return '无效的域名', 400
+    
     # 从回收站中移除该域名（如果存在）
     for node in recycle_bin:
         if node['domain'] == domain:
