@@ -218,11 +218,10 @@ def manage_domains():
             # Move domains from recycle bin back to node pool if they become accessible again
             for domain in recycle_bin:
                 if is_domain_accessible(domain):
-                    node_pool.append(domain)
+                    if not is_domain_exists(domain['domain']):
+                        node_pool.append(domain)
                     recycle_bin.remove(domain)
-                    if 'token' in domain and domain['token']:
-                        add_or_update_token(domain['token'], (10 + delta) * 3)
-
+                    
             # Remove domains from recycle bin if they are inaccessible for more than an hour
             for domain in recycle_bin:
                 if time.time() - domain['timestamp'] >= max_remove_time:
@@ -416,6 +415,9 @@ def upload_domain():
     if is_domain_exists(domain):
         return '该域名已存在于节点池', 404
 
+    #if not is_domain_accessible({'domain': domain}):
+    #    return '无效的域名', 400
+    
     # 从回收站中移除该域名（如果存在）
     for node in recycle_bin:
         if node['domain'] == domain:
