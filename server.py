@@ -221,7 +221,7 @@ def manage_domains():
                     if not is_domain_exists(domain['domain']):
                         node_pool.append(domain)
                     recycle_bin.remove(domain)
-                    
+
             # Remove domains from recycle bin if they are inaccessible for more than an hour
             for domain in recycle_bin:
                 if time.time() - domain['timestamp'] >= max_remove_time:
@@ -415,9 +415,9 @@ def upload_domain():
     if is_domain_exists(domain):
         return '该域名已存在于节点池', 404
 
-    #if not is_domain_accessible({'domain': domain}):
+    # if not is_domain_accessible({'domain': domain}):
     #    return '无效的域名', 400
-    
+
     # 从回收站中移除该域名（如果存在）
     for node in recycle_bin:
         if node['domain'] == domain:
@@ -444,7 +444,14 @@ def remove_domain():
 
     for node in node_pool + recycle_bin:
         if 'token' in node and node['token'] == token:
-            node_pool.remove(node)
+            try:
+                node_pool.remove(node)
+            except:
+                pass
+            try:
+                recycle_bin.remove(node)
+            except:
+                pass
             return '域名移除成功', 200
 
     if not FQWEB_TOKEN:
@@ -459,7 +466,14 @@ def remove_domain():
 
     for node in node_pool + recycle_bin:
         if node['domain'] == domain:
-            node_pool.remove(node)
+            try:
+                node_pool.remove(node)
+            except:
+                pass
+            try:
+                recycle_bin.remove(node)
+            except:
+                pass
             return '域名移除成功', 200
 
     return '不存在的域名', 404
