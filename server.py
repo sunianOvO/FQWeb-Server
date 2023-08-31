@@ -384,15 +384,15 @@ def token_valid():
 # 判断token是否有效
 def is_token_valid(token):
     if not token:
-        return '未提供token', 400
+        return '未提供token', 404
     # log(f'判断token是否有效：{token}')
     for token_obj in tokens:
         if token_obj['token'] == token:
             if token_obj['expire_time'] < time.time():
-                return 'token已失效', 400
+                return 'token已失效', 404
             else:
                 return f'{fmt_time(token_obj["expire_time"])}', 200
-    return 'token不存在', 400
+    return 'token不存在', 404
 
 
 # 用户上传域名到节点池的接口
@@ -405,16 +405,16 @@ def upload_domain():
     domain = request.args.get('domain')
     token = request.args.get('token')
     if not domain:
-        return '未提供域名', 400
+        return '未提供域名', 404
 
     if not is_valid_domain_name(domain):
-        return '不合法的域名', 400
+        return '不合法的域名', 404
 
     if domain in [block['domain'] for block in block_domains]:
-        return '域名已被封禁', 400
+        return '域名已被封禁', 404
 
     if is_domain_exists(domain):
-        return '该域名已存在于节点池', 400
+        return '该域名已存在于节点池', 404
 
     # 从回收站中移除该域名（如果存在）
     for node in recycle_bin:
@@ -427,6 +427,40 @@ def upload_domain():
     else:
         node_pool.append({'domain': domain, 'timestamp': time.time()})
     return '域名已成功上传', 200
+
+
+# 移除指定域名
+@app.route('/remove', methods=['GET'])
+def remove_domain():
+    global total_requests, daily_requests, active_nodes, FQWEB_TOKEN
+    total_requests += 1
+    daily_requests += 1
+    token = request.args.get("token")
+
+    if not token:
+        return '未提供token', 404
+
+    for node in node_pool + recycle_bin:
+        if 'token' in node and node['token'] == token:
+            node_pool.remove(node)
+            return '域名移除成功', 200
+
+    if not FQWEB_TOKEN:
+        return '未设置管理员TOKEN', 404
+
+    if token != FQWEB_TOKEN:
+        return '无效的token', 404
+
+    domain = request.args.get('domain')
+    if not domain:
+        return '未提供域名', 404
+
+    for node in node_pool + recycle_bin:
+        if node['domain'] == domain:
+            node_pool.remove(node)
+            return '域名移除成功', 200
+
+    return '不存在的域名', 404
 
 
 # 重定向至随机节点池中的域名（负载均衡），重定向需要保留URL和参数进行重定向
@@ -523,7 +557,7 @@ def get_active_nodes():
     daily_requests += 1
     token = request.args.get("token")
     if not FQWEB_TOKEN:
-        return '未设置TOKEN', 404
+        return '未设置管理员TOKEN', 404
     if not token or token != FQWEB_TOKEN:
         return '无效的token', 404
     if not node_pool:
@@ -586,16 +620,16 @@ def block_domain():
     daily_requests += 1
     token = request.args.get("token")
     if not FQWEB_TOKEN:
-        return '未设置TOKEN', 404
+        return '未设置管理员TOKEN', 404
     if not token or token != FQWEB_TOKEN:
         return '无效的token', 404
     domain = request.args.get('domain')
     if not domain:
-        return '未提供域名', 400
+        return '未提供域名', 404
 
     add_block_domain(domain)
 
-    return '添加黑名单成功', 400
+    return '添加黑名单成功', 200
 
 
 @app.route('/clear/blocks', methods=['GET'])
@@ -605,7 +639,7 @@ def clear_block_domains():
     daily_requests += 1
     token = request.args.get("token")
     if not FQWEB_TOKEN:
-        return '未设置TOKEN', 404
+        return '未设置管理员TOKEN', 404
     if not token or token != FQWEB_TOKEN:
         return '无效的token', 404
 
@@ -613,7 +647,7 @@ def clear_block_domains():
     with open(os.path.join(data_dir, 'block_domains.json'), 'w') as block_domains_file:
         json.dump(block_domains, block_domains_file)
 
-    return '黑名单清理成功', 400
+    return '黑名单清理成功', 200
 
 
 @app.route('/get/blocks', methods=['GET'])
@@ -623,7 +657,7 @@ def get_block_domains():
     daily_requests += 1
     token = request.args.get("token")
     if not FQWEB_TOKEN:
-        return '未设置TOKEN', 404
+        return '未设置管理员TOKEN', 404
     if not token or token != FQWEB_TOKEN:
         return '无效的token', 404
     if not block_domains:
