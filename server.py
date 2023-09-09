@@ -394,6 +394,16 @@ def is_token_valid(token):
     return 'token不存在', 404
 
 
+def get_domain_by_token(token):
+    if not token:
+        return None
+    # log(f'判断token是否有效：{token}')
+    for domain in node_pool + recycle_bin:
+        if domain['token'] == token:
+            return domain
+    return None
+
+
 # 用户上传域名到节点池的接口
 @app.route('/upload', methods=['GET'])
 def upload_domain():
@@ -492,6 +502,7 @@ def redirect_to_random_domain(any_url):
     #     return redirect(redirect_url, 302)
 
     token = request.headers.get('token')
+    tokendomain = request.headers.get('tokendomain')
     if not node_pool:
         return '没有可用的域名', 404
 
@@ -499,10 +510,15 @@ def redirect_to_random_domain(any_url):
         return "不合法的url", 404
 
     if is_token_valid(token)[1] == 200:
-        nodes = node_pool.copy()
-        nodes.sort(key=lambda x: x.get('load', 0))
-        domain = nodes[0]
+        domain = None
+        if tokendomain and tokendomain.lower() == "true":
+            domain = get_domain_by_token(token)
+        if not domain:
+            nodes = node_pool.copy()
+            nodes.sort(key=lambda x: x.get('load', 0))
+            domain = nodes[0]
         redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
+        increase_load(domain)
         return redirect(redirect_url, 302)
 
     # 寻找非满载的节点进行重定向，如果节点池中的节点均满载，则持续等待有非满载的节点进行重定向
@@ -528,13 +544,18 @@ def get_random_domain():
     daily_requests += 1
 
     token = request.headers.get('token')
+    tokendomain = request.headers.get('tokendomain')
     if not node_pool:
         return '没有可用的域名', 404
 
     if is_token_valid(token)[1] == 200:
-        nodes = node_pool.copy()
-        nodes.sort(key=lambda x: x.get('load', 0))
-        domain = nodes[0]
+        domain = None
+        if tokendomain and tokendomain.lower() == "true":
+            domain = get_domain_by_token(token)
+        if not domain:
+            nodes = node_pool.copy()
+            nodes.sort(key=lambda x: x.get('load', 0))
+            domain = nodes[0]
         increase_load(domain)
         return f"http://{domain['domain']}", 200
 
