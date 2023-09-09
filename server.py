@@ -394,13 +394,17 @@ def is_token_valid(token):
     return 'token不存在', 404
 
 
-def get_domain_by_token(token):
+# 根据token查找对应domain
+def is_token_domain(token):
     if not token:
-        return None
-    for domain in node_pool + recycle_bin:
-        if domain['token'] == token:
-            return domain
-    return None
+        return '未提供token', 404
+    # log(f'判断token是否有效：{token}')
+    for token_obj in node_pool + recycle_bin:
+        if token_obj['token'] == token:
+            if token_obj['domain']:
+                return f'{token_obj["domain"]}', 200
+
+    return 'token不在活跃列表', 404
 
 
 # 用户上传域名到节点池的接口
@@ -412,6 +416,7 @@ def upload_domain():
 
     domain = request.args.get('domain')
     token = request.args.get('token')
+    iid = request.args.get('iid')
     if not domain:
         return '未提供域名', 404
 
@@ -434,7 +439,7 @@ def upload_domain():
             break
     if token and is_valid_token(token):
         add_or_update_token(token)
-        node_pool.append({'domain': domain, 'token': token, 'timestamp': time.time()})
+        node_pool.append({'domain': domain, 'token': token, 'timestamp': time.time(), 'iid': iid})
     else:
         node_pool.append({'domain': domain, 'timestamp': time.time()})
     return '域名已成功上传', 200
@@ -509,16 +514,15 @@ def redirect_to_random_domain(any_url):
         return "不合法的url", 404
 
     if is_token_valid(token)[1] == 200:
-        domain = None
-        if tokendomain and tokendomain.lower() == "true":
-            domain = get_domain_by_token(token)
-        if not domain:
+        if is_token_domain(token)[1] == 200 and (tokendomain == "True" or tokendomain == "true"):
+            redirect_url = f"http://{is_token_domain(token)[0]}/{any_url}?{request.query_string.decode('utf-8')}"
+            return redirect(redirect_url, 302)
+        else:
             nodes = node_pool.copy()
             nodes.sort(key=lambda x: x.get('load', 0))
             domain = nodes[0]
-        redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
-        increase_load(domain)
-        return redirect(redirect_url, 302)
+            redirect_url = f"http://{domain['domain']}/{any_url}?{request.query_string.decode('utf-8')}"
+            return redirect(redirect_url, 302)
 
     # 寻找非满载的节点进行重定向，如果节点池中的节点均满载，则持续等待有非满载的节点进行重定向
     nodes = node_pool.copy()
@@ -548,15 +552,14 @@ def get_random_domain():
         return '没有可用的域名', 404
 
     if is_token_valid(token)[1] == 200:
-        domain = None
-        if tokendomain and tokendomain.lower() == "true":
-            domain = get_domain_by_token(token)
-        if not domain:
+        if is_token_domain(token)[1] == 200 and (tokendomain == "True" or tokendomain == "true"):
+            return f"http://{is_token_domain(token)[0]}", 200
+        else:
             nodes = node_pool.copy()
             nodes.sort(key=lambda x: x.get('load', 0))
             domain = nodes[0]
-        increase_load(domain)
-        return f"http://{domain['domain']}", 200
+            increase_load(domain)
+            return f"http://{domain['domain']}", 200
 
     # 寻找非满载的节点进行选取，如果节点池中的节点均满载，则持续等待有非满载的节点进行选取
     nodes = node_pool.copy()
@@ -717,4 +720,4 @@ def get_all_loads():
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         FQWEB_TOKEN = sys.argv[1]
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=9998)
