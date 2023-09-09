@@ -397,7 +397,6 @@ def is_token_valid(token):
 def get_domain_by_token(token):
     if not token:
         return None
-    # log(f'判断token是否有效：{token}')
     for domain in node_pool + recycle_bin:
         if domain['token'] == token:
             return domain
