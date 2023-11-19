@@ -32,6 +32,6 @@
       "customDomain": "{timestamp}.fqapi.sfacg.link:10000",
       "uploadDomainUrl": "http://list.fqapi.sfacg.link/upload?domain={domain}&token={token}",
       "uploadOnlySelf": false
-    }
+    },{"enable":true,"name":"YanyAPI","owner":"Yany","frpcConfig":"[common]\nserver_addr = frp.104300.xyz\nserver_port = 7000\ntoken = www.126126.xyz\ndns_server = 114.114.114.114\n\n[fqweb_{timestamp}]\ntype = http\nlocal_ip = 127.0.0.1\nlocal_port = {port}\ncustom_domains = {domain}","url":"https://fqweb.myany.uk","customDomain":"{timestamp}.api.myany.uk","uploadDomainUrl":"https://fqweb.myany.uk/upload?domain={domain}&token={token}","uploadOnlySelf":false}
   ]
 }
